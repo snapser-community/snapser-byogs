@@ -120,6 +120,8 @@ func (gs *GameServer) handleInput(txt string, sender net.Addr) string {
 	switch txt {
 	case "STATUS":
 		return "OK"
+	case "EXIT":
+		return "SHUTTING DOWN"
 	case "CRASH":
 		gs.Logger.Info().Msg("Crashing")
 		os.Exit(1)
