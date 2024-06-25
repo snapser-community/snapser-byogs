@@ -18,251 +18,102 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log"
 	"net"
 	"os"
 	"strings"
 
+	basesdk "agones.dev/agones/pkg/sdk"
 	"agones.dev/agones/pkg/util/signals"
 	sdk "agones.dev/agones/sdks/go"
-	inventorypb "github.com/snapser/simplegs/snapserpb/inventory"
-	statspb "github.com/snapser/simplegs/snapserpb/statistics"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/metadata"
+	"github.com/rs/zerolog"
 )
 
 type GameServer struct {
-	Ctx              context.Context
-	S                *sdk.SDK
-	InventoryClient  inventorypb.InventoryServiceClient
-	StatisticsClient statspb.StatisticsServiceClient
-	Matches          map[string]*Match
-	AddrMatchID      map[string]string
-	AddrPlayerID     map[string]string
-}
-
-type Match struct {
-	MatchId string
-	Players map[string]*Player
-}
-
-type Player struct {
-	UserId     string
-	Connection net.Addr
+	Ctx    context.Context
+	S      *sdk.SDK
+	Logger zerolog.Logger
 }
 
 func New() (*GameServer, error) {
+	logger := zerolog.New(os.Stderr).With().Timestamp().Logger()
 	sigCtx, _ := signals.NewSigKillContext()
 	log.Print("Creating SDK instance")
 	s, err := sdk.NewSDK()
 	if err != nil {
-		log.Fatalf("Could not connect to sdk: %v", err)
+		logger.Fatal().Err(err).Msg("Could not connect to sdk")
 	}
 
 	gs := &GameServer{
-		Ctx: sigCtx,
-		S:   s,
-	}
-	inventoryURL := os.Getenv("SNAPEND_INVENTORY_GRPC_URL")
-	if inventoryURL == "" {
-		log.Print("SNAPEND_INVENTORY_GRPC_URL not set")
-	} else {
-		inventoryClient, err := createInventoryClient(inventoryURL)
-		if err != nil {
-			log.Print("Error creating inventory client")
-		} else {
-			gs.InventoryClient = inventoryClient
-		}
-	}
-	statisticsUrl := os.Getenv("SNAPEND_STATISTICS_GRPC_URL")
-	if statisticsUrl == "" {
-		log.Printf("SNAPEND_STATISTICS_GRPC_URL not set")
-	} else {
-		statisticsClient, err := createStatisticsClient(statisticsUrl)
-		if err != nil {
-			log.Printf("Error creating statistics client: %s", err.Error())
-		} else {
-			gs.StatisticsClient = statisticsClient
-		}
+		Ctx:    sigCtx,
+		S:      s,
+		Logger: logger,
 	}
 	return gs, nil
 }
 
-// main starts a UDP or TCP server
 func main() {
 	port := flag.String("port", "7654", "The port to listen to traffic on")
-	udp := flag.Bool("udp", true, "Server will listen on UDP")
 
 	flag.Parse()
 	if ep := os.Getenv("PORT"); ep != "" {
 		port = &ep
 	}
-	if eudp := os.Getenv("UDP"); eudp != "" {
-		u := strings.ToUpper(eudp) == "TRUE"
-		udp = &u
-	}
 	gs, err := New()
 	if err != nil {
-		log.Fatalf("Could not create GameServer: %v", err)
+		gs.Logger.Fatal().Err(err).Msg("Could not create GameServer")
 		return
 	}
 
-	if *udp {
-		go gs.UdpListener(port)
+	go gs.UdpListener(port)
+	gs.S.WatchGameServer(func(baseGS *basesdk.GameServer) {
+		gs.Logger.Info().Str("status", baseGS.Status.String()).Interface("Annotations", baseGS.ObjectMeta.Annotations).Interface("labels", baseGS.ObjectMeta.Labels).Msg("Watching gameserver")
+	})
+	gs.Logger.Info().Msg("Readying")
+	err = gs.S.Ready()
+	if err != nil {
+		gs.Logger.Fatal().Err(err).Msg("Could not send ready message")
 	}
-	log.Println("Readying")
-	gs.Ready()
-	log.Println("Ready")
+	gs.Logger.Info().Msg("Ready")
 
 	<-gs.Ctx.Done()
 	os.Exit(0)
 }
 
-func (gs *GameServer) handleResponse(txt string) (response string, addACK bool, responseError error) {
-	parts := strings.Split(strings.TrimSpace(txt), " ")
-	response = txt
-	addACK = true
-	responseError = nil
-
-	switch parts[0] {
-	// shuts down the gameserver
-	case "EXIT":
-		// handle elsewhere, as we respond before exiting
-		return
-	case "CRASH":
-		log.Print("Crashing.")
-		os.Exit(1)
-		return "", false, nil
-	case "WIN":
-		if len(parts) < 2 {
-			return "", true, fmt.Errorf("no user id provided")
-		}
-		ctx := metadata.AppendToOutgoingContext(gs.Ctx, "gateway", "internal")
-		_, err := gs.StatisticsClient.IncrementUserStatistic(ctx, &statspb.IncrementUserStatisticRequest{
-			UserId: parts[1],
-			Key:    "wins",
-			Delta:  1,
-		})
-		if err != nil {
-			log.Printf("Error win statistic: %s", err.Error())
-			return "", true, fmt.Errorf("could not increment wins: %w", err)
-		}
-
-		_, err = gs.InventoryClient.UpdateUserVirtualCurrency(ctx, &inventorypb.UpdateUserVirtualCurrencyRequest{
-			UserId:       parts[1],
-			CurrencyName: "coins",
-			Amount:       100,
-		})
-		if err != nil {
-			log.Printf("Error currency: %s", err.Error())
-			return "", true, fmt.Errorf("could not update user virtual currency: %w", err)
-		}
-		return fmt.Sprintf("%s winner\n", parts[1]), false, nil
-	case "LOSE":
-		log.Print("Losing.")
-		if len(parts) < 2 {
-			return "", true, fmt.Errorf("no user id provided")
-		}
-		ctx := metadata.AppendToOutgoingContext(gs.Ctx, "gateway", "internal")
-		_, err := gs.StatisticsClient.IncrementUserStatistic(ctx, &statspb.IncrementUserStatisticRequest{
-			UserId: parts[1],
-			Key:    "losses",
-			Delta:  1,
-		})
-		if err != nil {
-			log.Printf("Error lose statistic: %s", err.Error())
-			return "", false, fmt.Errorf("could not increment losses: %w", err)
-		}
-		return fmt.Sprintf("%s loser\n", parts[1]), false, nil
-	}
-	return
-}
-
 func (gs *GameServer) UdpListener(port *string) {
-	log.Printf("Starting UDP server, listening on port %s", *port)
+	gs.Logger.Info().Str("port", *port).Msg("Starting UDP server")
 	conn, err := net.ListenPacket("udp", ":"+*port)
 	if err != nil {
-		log.Fatalf("Could not start UDP server: %v", err)
+		gs.Logger.Error().Err(err).Msg("Could not start UDP server")
 	}
-	defer conn.Close() // nolint: errcheck
+	defer conn.Close()
 	gs.udpReadWriteLoop(conn)
 }
 
 func (gs *GameServer) udpReadWriteLoop(conn net.PacketConn) {
 	b := make([]byte, 1024)
 	for {
-		sender, txt := readPacket(conn, b)
-
-		log.Printf("Received UDP: %v", txt)
-
-		response, addACK, err := gs.handleResponse(txt)
+		n, sender, err := conn.ReadFrom(b)
 		if err != nil {
-			response = "ERROR: " + response + "\n"
-		} else if addACK {
-			response = "ACK: " + response + "\n"
+			gs.Logger.Error().Err(err).Msg("Could not read from udp stream")
+		}
+		txt := strings.TrimSpace(string(b[:n]))
+		gs.Logger.Info().Str("sender", sender.String()).Str("txt", txt).Msg("Received UDP packet")
+		response := "ACK: " + txt + "\n"
+		if txt == "EXIT" {
+			response = "SHUTTING DOWN"
 		}
 
-		gs.udpRespond(conn, sender, response)
+		if _, err := conn.WriteTo([]byte(response), sender); err != nil {
+			gs.Logger.Error().Err(err).Msg("Could not write to udp stream")
+		}
 
 		if txt == "EXIT" {
-			gs.exit()
+			gs.Logger.Info().Msg("Shutting down")
+			err := gs.S.Shutdown()
+			if err != nil {
+				gs.Logger.Error().Err(err).Msg("Could not shutdown")
+			}
 		}
 	}
-}
-
-// respond responds to a given sender.
-func (gs *GameServer) udpRespond(conn net.PacketConn, sender net.Addr, txt string) {
-	if _, err := conn.WriteTo([]byte(txt), sender); err != nil {
-		log.Fatalf("Could not write to udp stream: %v", err)
-	}
-}
-
-// readPacket reads a string from the connection
-func readPacket(conn net.PacketConn, b []byte) (net.Addr, string) {
-	n, sender, err := conn.ReadFrom(b)
-	if err != nil {
-		log.Fatalf("Could not read from udp stream: %v", err)
-	}
-	txt := strings.TrimSpace(string(b[:n]))
-	log.Printf("Received packet from %v: %v", sender.String(), txt)
-	return sender, txt
-}
-
-// exit shutdowns the server
-func (gs *GameServer) exit() {
-	log.Printf("Received EXIT command. Exiting.")
-	// This tells Agones to shutdown this Game Server
-	shutdownErr := gs.S.Shutdown()
-	if shutdownErr != nil {
-		log.Printf("Could not shutdown")
-	}
-	// The process will exit when Agones removes the pod and the
-	// container receives the SIGTERM signal
-}
-
-func (gs *GameServer) Ready() {
-	err := gs.S.Ready()
-	if err != nil {
-		log.Fatalf("Could not send ready message")
-	}
-}
-
-func createInventoryClient(url string) (inventorypb.InventoryServiceClient, error) {
-	conn, err := grpc.Dial(url, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, err
-	}
-	client := inventorypb.NewInventoryServiceClient(conn)
-	return client, nil
-}
-
-func createStatisticsClient(url string) (statspb.StatisticsServiceClient, error) {
-	conn, err := grpc.Dial(url, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, err
-	}
-	client := statspb.NewStatisticsServiceClient(conn)
-	return client, nil
 }
