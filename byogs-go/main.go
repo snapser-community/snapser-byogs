@@ -18,6 +18,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -99,11 +100,8 @@ func (gs *GameServer) udpReadWriteLoop(conn net.PacketConn) {
 		}
 		txt := strings.TrimSpace(string(b[:n]))
 		gs.Logger.Info().Str("sender", sender.String()).Str("txt", txt).Msg("Received UDP packet")
-		response := "ACK: " + txt + "\n"
-		if txt == "EXIT" {
-			response = "SHUTTING DOWN"
-		}
 
+		response := gs.handleInput(txt, sender)
 		if _, err := conn.WriteTo([]byte(response), sender); err != nil {
 			gs.Logger.Error().Err(err).Msg("Could not write to udp stream")
 		}
@@ -116,4 +114,15 @@ func (gs *GameServer) udpReadWriteLoop(conn net.PacketConn) {
 			}
 		}
 	}
+}
+
+func (gs *GameServer) handleInput(txt string, sender net.Addr) string {
+	switch txt {
+	case "STATUS":
+		return "OK"
+	case "CRASH":
+		gs.Logger.Info().Msg("Crashing")
+		os.Exit(1)
+	}
+	return fmt.Sprintf("ACK: %s", txt)
 }
