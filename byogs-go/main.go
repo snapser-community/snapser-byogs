@@ -19,7 +19,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"net"
 	"os"
 	"strings"
@@ -39,7 +38,7 @@ type GameServer struct {
 func New() (*GameServer, error) {
 	logger := zerolog.New(os.Stderr).With().Timestamp().Logger()
 	sigCtx, _ := signals.NewSigKillContext()
-	log.Print("Creating SDK instance")
+	logger.Info().Msg("Creating SDK instance")
 	s, err := sdk.NewSDK()
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Could not connect to sdk")
