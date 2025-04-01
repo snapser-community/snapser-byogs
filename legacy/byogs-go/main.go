@@ -16,11 +16,13 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"strings"
 
@@ -111,6 +113,12 @@ func main() {
 
 	if *udp {
 		go gs.UdpListener(port)
+		// _ = gs.S.WatchGameServer(func(baseGS *basesdk.GameServer) {
+		// 	//gs.Logger.Info().Str("status", baseGS.Status.String()).Interface("Annotations", baseGS.ObjectMeta.Annotations).Interface("labels", baseGS.ObjectMeta.Labels).Msg("Agones SDK Event: " + baseGS.Status.State)
+		// 	if baseGS.Status.State == "Allocated" {
+		// 		gs.updateGameServerState(baseGS.ObjectMeta.Name, "READY")
+		// 	}
+		// })
 	}
 	log.Println("Readying")
 	gs.Ready()
@@ -247,6 +255,62 @@ func (gs *GameServer) Ready() {
 	if err != nil {
 		log.Fatalf("Could not send ready message")
 	}
+}
+
+func (gs *GameServer) updateGameServerState(name string, state string) {
+	log.Printf("Updating GameServer state: %v", state)
+
+	url := os.Getenv("GATEWAY_URL")
+	apiKey := os.Getenv("API_KEY")
+
+	if url == "" || apiKey == "" {
+		log.Printf("Gateway URL or API key not set")
+		return
+	}
+
+	url = fmt.Sprintf(url, name)
+
+	log.Printf("Url: %v Api-Key: %v", url, apiKey)
+
+	jsonPayload := []byte(`{
+		"state": "READY",
+		"game_server_state_metadata": {
+			"map": "desolation_sound",
+			"difficulty": "nightmare"
+		}
+	}`)
+
+	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonPayload))
+	if err != nil {
+		log.Printf("Error creating request: %v", err)
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("App-Key", apiKey)
+
+	client := &http.Client{}
+
+	res, err := client.Do(req)
+	defer func() {
+		if res != nil {
+			err := res.Body.Close()
+			if err != nil {
+				log.Printf("Error closing response body")
+			}
+		}
+	}()
+
+	if err != nil {
+		log.Printf("Error sending request")
+		return
+	}
+
+	if res.StatusCode != 200 {
+		log.Printf("Error updating gameserver state: %v", res.StatusCode)
+		return
+	}
+	log.Printf("GameServer state updated: %v", res.Body)
 }
 
 func createInventoryClient(url string) (inventorypb.InventoryServiceClient, error) {
