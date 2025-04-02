@@ -9,7 +9,7 @@ This tutorial highlights how you can use the Snapser CLI tool and custom game se
 
 ## Pre-Requisites
 
-### A. Understand Agones
+### A. Understanding Agones
 Agones is an open source platform, for deploying, hosting, scaling, and orchestrating dedicated game servers for large scale multiplayer games, built on top of the industry standard, distributed system platform Kubernetes.
 
 Snapser uses Agones under the hood and replaces bespoke or proprietary cluster management and game server scaling solutions with a managed solution - so that you can focus on the important aspects of building a multiplayer game, rather than developing the infrastructure to support it.
@@ -82,8 +82,8 @@ It should be noted that every subsequent `byogs publish` will need to have a dif
   - Optional Settings: This is where you can add custom commands, arguments and environment variables. Leave this as blank for the tutorial.
 6. Scroll back up and hit save. This will tell Snapsers global compute to spin up a fleet and have it ready for you to allocate.
 
-##### B. Allocate a Server
-1. After you click save, you will be taken back to the Fleet Configuration tool, where you will see the status of your new fleet.
+### Step 4: Allocate a Server
+1. On the Fleet Configuration tool, you will see the status of your new fleet.
 2. Once the servers are ready, you will see a green check next to the region chip. Once you see that, its time to see the Fleet Control plane.
 3. Hover over, the fleet and you will see a menu, where you can click the **Control Plane** of the fleet.
 4. This will take you to a view that shows you all the servers that are available to you for allocation.
@@ -93,7 +93,7 @@ It should be noted that every subsequent `byogs publish` will need to have a dif
 
 It should be noted that, you do not have to manually allocate servers in Snapser. The Snapser fleet snap has integrations with Snapser snaps like Matchmaking, Parties and Lobbies. This allows you to automate your server allocation workflows.
 
-### Step 4: Testing
+### Step 5: Testing
 - Download the SuperTuxKart (client)[https://supertuxkart.net/Download].
 - Once its done downloading, start the app and pick **Online**.
 - Then click on **Enter server address**.

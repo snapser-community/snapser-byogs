@@ -1,0 +1,315 @@
+{
+    "version": "v1",
+    "id": "wrxt9nq8",
+    "name": "byogs-tuxkart",
+    "environment": "DEVELOPMENT",
+    "service_definitions": [
+        {
+            "id": "auth",
+            "language": "go",
+            "version": "v0.47.0",
+            "author_id": "snapser",
+            "category": "SNAPSER",
+            "subcategory": "SERVICE",
+            "data_dependencies": [
+                {
+                    "type": "POSTGRES",
+                    "postgres": {
+                        "database": "auth"
+                    }
+                },
+                {
+                    "type": "POSTGRES",
+                    "postgres": {
+                        "database": "auth_settings"
+                    }
+                },
+                {
+                    "type": "REDIS",
+                    "redis": {}
+                }
+            ]
+        },
+        {
+            "id": "game-server-fleets",
+            "language": "go",
+            "version": "v0.46.0",
+            "author_id": "snapser",
+            "category": "SNAPSER",
+            "subcategory": "FLEET",
+            "data_dependencies": [
+                {
+                    "type": "POSTGRES",
+                    "postgres": {
+                        "database": "game_server_fleets_settings"
+                    }
+                },
+                {
+                    "type": "REDIS",
+                    "redis": {}
+                }
+            ]
+        }
+    ],
+    "settings": [
+        {
+            "id": "auth",
+            "data": {
+                "dev": {
+                    "anon": {
+                        "enabled": false
+                    },
+                    "api_keys": [],
+                    "app_auth": {
+                        "enabled": false
+                    },
+                    "app_verify": {
+                        "client_secret": "",
+                        "enabled": false
+                    },
+                    "apple": {
+                        "enabled": false,
+                        "key_id": "",
+                        "private_key": "",
+                        "service_id": "",
+                        "team_id": ""
+                    },
+                    "email": {
+                        "enabled": false,
+                        "otp_length": 0,
+                        "otp_rate_limit_settings": {
+                            "allow_list": [],
+                            "deny_list": [],
+                            "duration_in_seconds": 60,
+                            "limit": 5,
+                            "lockout_duration_in_seconds": 60
+                        },
+                        "otp_validity": 0
+                    },
+                    "epic": {
+                        "client_id": "",
+                        "client_secret": "",
+                        "enabled": false
+                    },
+                    "facebook": {
+                        "client_id": "",
+                        "client_secret": "",
+                        "enabled": false
+                    },
+                    "google": {
+                        "client_id": "",
+                        "client_secret": "",
+                        "enabled": false
+                    },
+                    "password": {
+                        "enabled": false
+                    },
+                    "session_inactivity_timeout": 604800,
+                    "session_token_validity": 2592000,
+                    "steam": {
+                        "api_key": "",
+                        "app_id": 0,
+                        "enabled": false,
+                        "publisher_api_key": "",
+                        "web_api_key": ""
+                    },
+                    "user_auth_restrictions": [],
+                    "xbox": {
+                        "client_id": "",
+                        "client_secret": "",
+                        "enabled": false
+                    }
+                },
+                "prod": {
+                    "anon": {
+                        "enabled": false
+                    },
+                    "api_keys": [],
+                    "app_auth": {
+                        "enabled": false
+                    },
+                    "app_verify": {
+                        "client_secret": "",
+                        "enabled": false
+                    },
+                    "apple": {
+                        "enabled": false,
+                        "key_id": "",
+                        "private_key": "",
+                        "service_id": "",
+                        "team_id": ""
+                    },
+                    "email": {
+                        "enabled": false,
+                        "otp_length": 0,
+                        "otp_rate_limit_settings": {
+                            "allow_list": [],
+                            "deny_list": [],
+                            "duration_in_seconds": 60,
+                            "limit": 5,
+                            "lockout_duration_in_seconds": 60
+                        },
+                        "otp_validity": 0
+                    },
+                    "epic": {
+                        "client_id": "",
+                        "client_secret": "",
+                        "enabled": false
+                    },
+                    "facebook": {
+                        "client_id": "",
+                        "client_secret": "",
+                        "enabled": false
+                    },
+                    "google": {
+                        "client_id": "",
+                        "client_secret": "",
+                        "enabled": false
+                    },
+                    "password": {
+                        "enabled": false
+                    },
+                    "session_inactivity_timeout": 604800,
+                    "session_token_validity": 2592000,
+                    "steam": {
+                        "api_key": "",
+                        "app_id": 0,
+                        "enabled": false,
+                        "publisher_api_key": "",
+                        "web_api_key": ""
+                    },
+                    "user_auth_restrictions": [],
+                    "xbox": {
+                        "client_id": "",
+                        "client_secret": "",
+                        "enabled": false
+                    }
+                },
+                "stage": {
+                    "anon": {
+                        "enabled": false
+                    },
+                    "api_keys": [],
+                    "app_auth": {
+                        "enabled": false
+                    },
+                    "app_verify": {
+                        "client_secret": "",
+                        "enabled": false
+                    },
+                    "apple": {
+                        "enabled": false,
+                        "key_id": "",
+                        "private_key": "",
+                        "service_id": "",
+                        "team_id": ""
+                    },
+                    "email": {
+                        "enabled": false,
+                        "otp_length": 0,
+                        "otp_rate_limit_settings": {
+                            "allow_list": [],
+                            "deny_list": [],
+                            "duration_in_seconds": 60,
+                            "limit": 5,
+                            "lockout_duration_in_seconds": 60
+                        },
+                        "otp_validity": 0
+                    },
+                    "epic": {
+                        "client_id": "",
+                        "client_secret": "",
+                        "enabled": false
+                    },
+                    "facebook": {
+                        "client_id": "",
+                        "client_secret": "",
+                        "enabled": false
+                    },
+                    "google": {
+                        "client_id": "",
+                        "client_secret": "",
+                        "enabled": false
+                    },
+                    "password": {
+                        "enabled": false
+                    },
+                    "session_inactivity_timeout": 604800,
+                    "session_token_validity": 2592000,
+                    "steam": {
+                        "api_key": "",
+                        "app_id": 0,
+                        "enabled": false,
+                        "publisher_api_key": "",
+                        "web_api_key": ""
+                    },
+                    "user_auth_restrictions": [],
+                    "xbox": {
+                        "client_id": "",
+                        "client_secret": "",
+                        "enabled": false
+                    }
+                }
+            },
+            "version": "v0.47.0",
+            "exported_at": "1743543382"
+        },
+        {
+            "id": "game-server-fleets",
+            "data": {
+                "fleets": [
+                    {
+                        "debug_port": 0,
+                        "description": "Fleet",
+                        "dev_profile": {
+                            "args": [],
+                            "buffer": "1",
+                            "cmd": "",
+                            "cpu": 100,
+                            "env_params": [],
+                            "max_replicas": 1,
+                            "memory": 0.125,
+                            "min_replicas": 1,
+                            "regions": [
+                                "oregon"
+                            ]
+                        },
+                        "fleet_deployments": [],
+                        "image_tag": "v1.0.0",
+                        "name": "tux-kart",
+                        "port": 8080,
+                        "prod_profile": {
+                            "args": [],
+                            "buffer": "1",
+                            "cmd": "",
+                            "cpu": 100,
+                            "env_params": [],
+                            "max_replicas": 1,
+                            "memory": 0.125,
+                            "min_replicas": 1,
+                            "regions": [
+                                "oregon"
+                            ]
+                        },
+                        "stage_profile": {
+                            "args": [],
+                            "buffer": "1",
+                            "cmd": "",
+                            "cpu": 100,
+                            "env_params": [],
+                            "max_replicas": 1,
+                            "memory": 0.125,
+                            "min_replicas": 1,
+                            "regions": [
+                                "oregon"
+                            ]
+                        },
+                        "status": "LIVE"
+                    }
+                ]
+            },
+            "version": "v0.46.0",
+            "exported_at": "-62135596800"
+        }
+    ]
+}
