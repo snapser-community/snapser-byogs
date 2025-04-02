@@ -24,12 +24,7 @@ RUN go mod tidy &&\
 FROM debian:bookworm
 
 WORKDIR /home/supertuxkart
-# RUN apt update && apt-get install -y supertuxkart && apt clean
-RUN apt update && \
-    apt-get install -y --no-install-recommends supertuxkart && \
-    rm -rf /var/lib/apt/lists/* && \
-    apt-get clean
-
+RUN apt update && apt-get install -y supertuxkart && apt clean
 
 RUN useradd -m  -u 1000 supertuxkart
 
