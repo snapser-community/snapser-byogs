@@ -21,7 +21,7 @@ RUN go mod tidy &&\
     go build -o wrapper .
 
 # Installing STK
-FROM debian:bookworm
+FROM debian:bookworm-20250908
 
 WORKDIR /home/supertuxkart
 RUN apt update && apt-get install -y supertuxkart && apt clean
