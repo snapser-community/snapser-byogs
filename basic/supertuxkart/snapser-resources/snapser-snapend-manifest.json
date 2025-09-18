@@ -1,13 +1,13 @@
 {
     "version": "v1",
-    "id": "wrxt9nq8",
+    "id": "abcdefgh",
     "name": "byogs-tuxkart",
     "environment": "DEVELOPMENT",
     "service_definitions": [
         {
             "id": "auth",
             "language": "go",
-            "version": "v0.47.0",
+            "version": "v1.0.0",
             "author_id": "snapser",
             "category": "SNAPSER",
             "subcategory": "SERVICE",
@@ -33,7 +33,7 @@
         {
             "id": "game-server-fleets",
             "language": "go",
-            "version": "v0.46.0",
+            "version": "v1.0.0",
             "author_id": "snapser",
             "category": "SNAPSER",
             "subcategory": "FLEET",
