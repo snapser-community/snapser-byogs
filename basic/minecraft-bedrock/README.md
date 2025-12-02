@@ -52,6 +52,7 @@ snapctl byogs publish --tag mc-1 --path $path
 - Click on the Create Fleet button.
   - Give your fleet a name, description
   - Select the `mc-1` tag from the list of available tags.
+  - Add `19132` as the port for the fleet. Do note: when a fleet server comes up, it will be allocated a random port but you have to tell Snapser the internal port your container is going to listen on.
   - Let the region be the default and keep the default Allocation Settings for now.
   - For Hardware settings, add a min of 0.5 CPU and 2 GB memory
   - IMPORTANT: Add an environment variable `EULA=TRUE`. If you do not do this, the fleet server will not come up. Microsoft requires you to accept the EULA before you can run the server.
